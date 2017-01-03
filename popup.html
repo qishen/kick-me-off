@@ -1,0 +1,80 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Should I reply?</title>
+    <style>
+      body {
+        font-family: 'Avenir', sans-serif;
+        font-size: 100%;
+        min-height: 200px;
+        min-width: 600px;
+        font-size: 14px;
+        padding: 25px 20px;
+      }
+
+      h2 {
+        font-size: 12px;
+        font-weight: 300;
+      }
+
+      h1 {
+        font-size: 30px;
+        font-weight: 500;
+        margin: 0;
+      }
+
+      a {
+        color: #888;
+        text-decoration: none;
+        transition: all .3s;
+      }
+
+      a:focus {
+        border: none;
+        outline: none;
+      }
+
+      a:hover {
+        color: #000;
+      }
+
+      .header {
+        padding: 15px;
+        background-color: #eee;
+        border-radius: 2px;
+        margin-bottom: 20px;
+      }
+
+      .tag {
+        display: inline-block;
+        border-radius: 2px;
+        background-color: #eee;
+        padding: 4px;
+      }
+
+      #error {
+        position: fixed;
+        top: 5px;
+        left: 20px;
+        width: 100%;
+        color: #E34B4B;
+        padding: 0 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="error"></div>
+    <div class="header">
+      <h2> Should I reply? </h2>
+      <h1 id="title"></h1>
+      <h2 id="suggestion"></h2>
+    </div>
+
+    <div class="stats">
+      <div id="status"></div>
+    </div>
+
+    <script src="dist/vendor.bundle.js"></script>
+    <script src="dist/main.bundle.js"></script>
+  </body>
+</html>
