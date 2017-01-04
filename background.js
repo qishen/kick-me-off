@@ -1,14 +1,14 @@
 chrome.browserAction.setPopup({popup: "popup.html"});
 
 // Click listener is disabled after popup is set up.
-chrome.browserAction.onClicked.addListener(function(tab) {
+/*chrome.browserAction.onClicked.addListener(function(tab) {
   // console.log(tab);
   chrome.tabs.create({url: "http://google.com"}, function(tab){
     chrome.tabs.executeScript(tab.id, {file: "content.js"}, function() {
       chrome.tabs.sendMessage(tab.id, "Background page started.");
     });
   });
-})
+})*/
 
 chrome.runtime.onMessage.addListener(function(msg, _, sendResponse) {
   if(msg.alertIssued) {

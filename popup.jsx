@@ -1,7 +1,28 @@
 import React from 'react';
-import ReactDOM from 'react-dom'
+import ReactDOM from 'react-dom';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
-// import {render} from 'react-dom';
+import {List, ListItem} from 'material-ui/List';
+import MuiTextField from 'material-ui/TextField';
+import MuiSelectField from 'material-ui/SelectField'
+import MuiMenuItem from 'material-ui/MenuItem';
+import MuiRaisedButton from 'material-ui/RaisedButton';
+import MuiIconButton from 'material-ui/IconButton';
+import MuiRemoveSVG from 'material-ui/svg-icons/action/delete';
+
+// Make material-ui SelectField to change on event and render options correctly.
+import injectTapEventPlugin from 'react-tap-event-plugin';
+injectTapEventPlugin();
+
+
+const durationItems = [
+  <MuiMenuItem key={0} value={0} primaryText="Never" />,
+  <MuiMenuItem key={300} value={300} primaryText="5 minutes" />,
+  <MuiMenuItem key={600} value={600} primaryText="10 minutes" />,
+  <MuiMenuItem key={1800} value={1800} primaryText="30 minutes" />,
+  <MuiMenuItem key={3600} value={3600} primaryText="1 hour" />,
+  <MuiMenuItem key={7200} value={7200} primaryText="2 hours" />,
+  <MuiMenuItem key={43200} value={43200} primaryText="12 hours" />,
+];
 
 // Example component
 class HelloMessage extends React.Component {
@@ -18,23 +39,30 @@ class CountDownList extends React.Component {
     this.state = {items: this.props.items};
   }
 
-  componentDidMount() {
-
-  }
-
-  componentWillUnmount() {
-
+  onClick() {
+    console.log("hi, Qishen");
   }
 
   render() {
     const itemKeys = Object.keys(this.props.items);
     const items = this.props.items;
+    var iconButton = (
+      <MuiIconButton onClick={this.onClick}>
+        <MuiRemoveSVG />
+      </MuiIconButton>
+    );
     return (
-      <ul>
-        {itemKeys.map(itemKey => (
-          <li key={itemKey}>{itemKey + ' ' + items[itemKey].sec}</li>
-        ))}
-      </ul>
+      <List>
+        {itemKeys.map(itemKey => {
+          var h = Math.floor(items[itemKey].sec / 3600);
+          var m = Math.floor(items[itemKey].sec % 3600 / 60);
+          var s = items[itemKey].sec % 3600 % 60;
+          return (
+            <ListItem secondaryText={itemKey} rightIcon={iconButton}
+            key={itemKey} primaryText={h + ':' + m + ':' + s} />
+          )
+        })}
+      </List>
     );
   }
 }
@@ -43,9 +71,10 @@ class CountDownApp extends React.Component {
 
   constructor(props) {
     super(props);
-    this.state = {items: {}, text: ''};
+    this.state = {items: {}, text: '', sec: 0};
     // Bind functions to be used in callback.
-    this.handleChange = this.handleChange.bind(this);
+    this.handleSecFieldChange = this.handleSecFieldChange.bind(this);
+    this.handleURLFieldChange = this.handleURLFieldChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
   }
 
@@ -53,11 +82,16 @@ class CountDownApp extends React.Component {
     return (
       <MuiThemeProvider>
         <div>
-          <h3>Kick Me Off!</h3>
+          <h1>Kick Me Off!</h1>
           <form onSubmit={this.handleSubmit}>
-            <input onChange={this.handleChange} name='url' value={this.state.text} />
-            <input name='sec' />
-            <button>Add</button>
+            <MuiSelectField name='sec' floatingLabelText="Timer"
+            value={this.state.sec} onChange={this.handleSecFieldChange}>
+              {durationItems}
+            </MuiSelectField>
+            <MuiTextField onChange={this.handleURLFieldChange} name='url'
+                          floatingLabelText="Enter url e.g. www.youtube.com"
+                          value={this.state.text} />
+            <MuiRaisedButton label="Add Item" type="submit"/>
           </form>
           <CountDownList items={this.state.items} />
         </div>
@@ -70,7 +104,11 @@ class CountDownApp extends React.Component {
     return regexp.test(url);
   }
 
-  handleChange(e) {
+  handleSecFieldChange(event, index, value) {
+    this.setState({sec: value}); // Turn minutes to seconds.
+  }
+
+  handleURLFieldChange(e) {
     // Save the input text to state variable and do validation.
     this.setState({text: e.target.value});
     if(this.isValidURL(e.target.value)){
@@ -85,12 +123,11 @@ class CountDownApp extends React.Component {
 
   handleSubmit(e) {
     e.preventDefault();
-    var seconds = e.target.sec.value;
+    var seconds = this.state.sec;
     var url = e.target.url.value;
     this.setState((prevState) => {
       // Decrement attribute sec every second.
       var interval = setInterval(() => this.decrementSec(url), 1000);
-
       // Make a deep copy for Immutability and add one new item.
       var newItems = Object.assign({}, prevState.items);
       newItems[url] = {sec: seconds, interval: interval};
@@ -126,6 +163,5 @@ class CountDownApp extends React.Component {
 }
 
 
-var mountNode = document.getElementById("title");
+var mountNode = document.getElementById("root");
 ReactDOM.render(<CountDownApp />, mountNode);
-//ReactDOM.render(<HelloMessage />, mountNode);

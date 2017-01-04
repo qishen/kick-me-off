@@ -17,8 +17,7 @@
     "permissions": [
       "<all_urls>",
       "activeTab",
-      "tabs"
-    ],
+      "tabs"],
 
     "icons": { "48": "icon.png" }
 }
