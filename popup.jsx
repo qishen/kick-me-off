@@ -1,3 +1,4 @@
+import Utils from './utils';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
@@ -13,7 +14,7 @@ import MuiRemoveSVG from 'material-ui/svg-icons/action/delete';
 import injectTapEventPlugin from 'react-tap-event-plugin';
 injectTapEventPlugin();
 
-
+// All options for choose duration in MuiSelectField.
 const durationItems = [
   <MuiMenuItem key={0} value={0} primaryText="Never" />,
   <MuiMenuItem key={300} value={300} primaryText="5 minutes" />,
@@ -31,42 +32,6 @@ class HelloMessage extends React.Component {
   }
 }
 
-
-class CountDownList extends React.Component {
-
-  constructor(props) {
-    super(props);
-    this.state = {items: this.props.items};
-  }
-
-  onClick() {
-    console.log("hi, Qishen");
-  }
-
-  render() {
-    const itemKeys = Object.keys(this.props.items);
-    const items = this.props.items;
-    var iconButton = (
-      <MuiIconButton onClick={this.onClick}>
-        <MuiRemoveSVG />
-      </MuiIconButton>
-    );
-    return (
-      <List>
-        {itemKeys.map(itemKey => {
-          var h = Math.floor(items[itemKey].sec / 3600);
-          var m = Math.floor(items[itemKey].sec % 3600 / 60);
-          var s = items[itemKey].sec % 3600 % 60;
-          return (
-            <ListItem secondaryText={itemKey} rightIcon={iconButton}
-            key={itemKey} primaryText={h + ':' + m + ':' + s} />
-          )
-        })}
-      </List>
-    );
-  }
-}
-
 class CountDownApp extends React.Component {
 
   constructor(props) {
@@ -78,30 +43,69 @@ class CountDownApp extends React.Component {
     this.handleSubmit = this.handleSubmit.bind(this);
   }
 
+  CountDownList(props) {
+    // itemKeys contains all the urls for blacklist.
+    const itemKeys = Object.keys(props.items);
+    const items = props.items;
+
+    // Icon button for deleting item.
+    var createLabeledIconButton = (itemKey) => {
+      // Use a tweak to pass one more param.
+      return (
+        <MuiIconButton onClick={(e) => this.handleDeleteClick(e, itemKey)}
+          key={name} name='iconButton'>
+          <MuiRemoveSVG />
+        </MuiIconButton>
+      );
+    }
+    createLabeledIconButton.bind(this);
+
+    return (
+      <List>
+        {itemKeys.map(itemKey => {
+          var seconds = items[itemKey].sec;
+          var iconButton = createLabeledIconButton(itemKey);
+          return (
+            <ListItem secondaryText={itemKey} rightIcon={iconButton}
+              key={itemKey} primaryText={Utils.secondToString(seconds)}
+            />
+          );
+        })}
+      </List>
+    );
+  }
+
   render() {
+    // Create a new element and bind it to current context.
+    var CountDownList = this.CountDownList.bind(this);
+
     return (
       <MuiThemeProvider>
         <div>
           <h1>Kick Me Off!</h1>
           <form onSubmit={this.handleSubmit}>
+
             <MuiSelectField name='sec' floatingLabelText="Timer"
-            value={this.state.sec} onChange={this.handleSecFieldChange}>
+              value={this.state.sec} onChange={this.handleSecFieldChange}>
               {durationItems}
             </MuiSelectField>
+
             <MuiTextField onChange={this.handleURLFieldChange} name='url'
-                          floatingLabelText="Enter url e.g. www.youtube.com"
-                          value={this.state.text} />
+              floatingLabelText="Enter url e.g. www.youtube.com"
+              value={this.state.text}
+            />
+
             <MuiRaisedButton label="Add Item" type="submit"/>
           </form>
+
           <CountDownList items={this.state.items} />
         </div>
       </MuiThemeProvider>
     );
   }
-
-  isValidURL(url){
-    var regexp = /(ftp|http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?/
-    return regexp.test(url);
+  
+  handleDeleteClick(e, url) {
+    this.removeItem(url);
   }
 
   handleSecFieldChange(event, index, value) {
@@ -111,7 +115,7 @@ class CountDownApp extends React.Component {
   handleURLFieldChange(e) {
     // Save the input text to state variable and do validation.
     this.setState({text: e.target.value});
-    if(this.isValidURL(e.target.value)){
+    if(Utils.isValidURL(e.target.value)){
 
     }
     else {
@@ -121,6 +125,7 @@ class CountDownApp extends React.Component {
     }
   }
 
+  // TODO: Prevent enter same url if one already exists.
   handleSubmit(e) {
     e.preventDefault();
     var seconds = this.state.sec;
@@ -156,6 +161,7 @@ class CountDownApp extends React.Component {
     this.setState((prevState) => {
       // Make a deep copy for Immutability and remove one item.
       var newItems = Object.assign({}, prevState.items);
+      clearInterval(newItems[url].interval);
       delete newItems[url];
       return {items: newItems};
     });
