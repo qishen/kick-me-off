@@ -4,6 +4,7 @@ function isValidURL(url){
 }
 
 function secondToString(sec) {
+  if(sec <= 0) return "Site is blocked";
   var h = Math.floor(sec / 3600);
   var m = Math.floor(sec % 3600 / 60);
   var s = sec % 3600 % 60;

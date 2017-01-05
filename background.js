@@ -23,14 +23,33 @@ chrome.runtime.onConnect.addListener(function(port) {
       chrome.alarms.clear(msg.url);
       port.postMessage({items: items});
     }
-    else if(msg.name == 'query') {
-      port.postMessage({items: items});
-    }
     else if (msg.name == 'add') {
       // Record timestamp to calculate elapsed time later.
       items[msg.url] = {sec: msg.sec, timestamp: Date.now()};
-      chrome.alarms.create(msg.url, {delayInMinutes: Math.floor(msg.sec / 60)});
+      if(msg.sec >= 60) {
+        chrome.alarms.create(msg.url, {delayInMinutes: Math.floor(msg.sec / 60)});
+      }
+      else {
+        items[msg.url].sec = 0;
+        closeTabs(msg.url);
+        showAlertOnPage();
+      }
       port.postMessage({items: items});
+    }
+    else if(msg.name == 'query') {
+      port.postMessage({items: items});
+    }
+  });
+});
+
+// Close blocked websites when a new tab is created.
+chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
+  console.log(changeInfo);
+  // Check if changeInfo.url contains a substring url.
+  Object.keys(items).map(function(itemKey) {
+    if(changeInfo.url && changeInfo.url.indexOf(itemKey)  > -1 &&
+       items[itemKey].sec === 0) {
+      closeTabs(itemKey);
     }
   });
 });
@@ -39,4 +58,7 @@ chrome.runtime.onConnect.addListener(function(port) {
 chrome.alarms.onAlarm.addListener(function(alarm) {
   closeTabs(alarm.name);
   showAlertOnPage();
+  if(items[alarm.name]){
+    items[alarm.name].sec = 0; // Reset to 0 and block this url.
+  }
 });
