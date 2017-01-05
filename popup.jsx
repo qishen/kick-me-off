@@ -14,6 +14,10 @@ import MuiRemoveSVG from 'material-ui/svg-icons/action/delete';
 import injectTapEventPlugin from 'react-tap-event-plugin';
 injectTapEventPlugin();
 
+var port = chrome.runtime.connect({name: "kickmeoff"});
+// port.postMessage({joke: "helloworld"});
+
+
 // All options for choose duration in MuiSelectField.
 const durationItems = [
   <MuiMenuItem key={0} value={0} primaryText="Never" />,
@@ -37,10 +41,21 @@ class CountDownApp extends React.Component {
   constructor(props) {
     super(props);
     this.state = {items: {}, text: '', sec: 0};
+    this.intervals = [];
+
     // Bind functions to be used in callback.
-    this.handleSecFieldChange = this.handleSecFieldChange.bind(this);
     this.handleURLFieldChange = this.handleURLFieldChange.bind(this);
+    this.handleMessageReceive = this.handleMessageReceive.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
+
+    // Get port from props and set handler for message communication
+    this.port = this.props.port;
+    port.onMessage.addListener(this.handleMessageReceive);
+  }
+
+  // Query initial items data from background after component mounted.
+  componentDidMount() {
+    this.port.postMessage({name: 'query'});
   }
 
   CountDownList(props) {
@@ -85,8 +100,8 @@ class CountDownApp extends React.Component {
           <h1>Kick Me Off!</h1>
           <form onSubmit={this.handleSubmit}>
 
-            <MuiSelectField name='sec' floatingLabelText="Timer"
-              value={this.state.sec} onChange={this.handleSecFieldChange}>
+            <MuiSelectField name='sec' floatingLabelText="Timer" value={this.state.sec}
+              onChange={(event, index, value) => this.setState({sec: value})}>
               {durationItems}
             </MuiSelectField>
 
@@ -103,13 +118,60 @@ class CountDownApp extends React.Component {
       </MuiThemeProvider>
     );
   }
-  
-  handleDeleteClick(e, url) {
-    this.removeItem(url);
+
+  /**
+   * Receive message msg.items from background script and update
+   * its own state with decremented sec attribute.
+   * @param  {Object} msg [description]
+   */
+  handleMessageReceive(msg) {
+    console.log(msg);
+    // Remove all existing intervals
+    this.intervals.map((interval) => {clearInterval(interval)});
+    if(msg.items == undefined) return;
+
+    // After receive messages from background, update items with new seconds
+    // based on calculation of current time and timestamp.
+    this.setState((prevState) => {
+      var newItems = Object.assign({}, prevState.items);
+      var itemKeys = Object.keys(msg.items);
+      var timenow = Date.now();
+
+      itemKeys.map((itemKey) => {
+        var seconds = msg.items[itemKey].sec;
+        var timestamp = msg.items[itemKey].timestamp;
+        var newSeconds = seconds -  Math.floor((timenow - timestamp) / 1000);
+        newItems[itemKey].sec = newSeconds;
+        // Create new intervals for each url.
+        var interval = setInterval(() => {
+          this.decrementSec(itemKey);
+        }, 1000);
+        this.intervals.push(interval);
+      });
+      return {items: newItems};
+    });
   }
 
-  handleSecFieldChange(event, index, value) {
-    this.setState({sec: value}); // Turn minutes to seconds.
+  decrementSec(url) {
+    this.setState((prevState) => {
+      // Make a deep copy for Immutability and remove one item.
+      var newItems = Object.assign({}, prevState.items);
+      if(newItems[url].sec !== 0) {
+        newItems[url].sec = newItems[url].sec - 1;
+      }
+      return {items: newItems};
+    });
+  }
+
+  /**
+   * Notify background script to delete timer for this url and
+   * graphically delete this item from list.
+   * @param  {Event} e    Default onClick event
+   * @param  {String} url
+   */
+  handleDeleteClick(e, url) {
+    this.port.postMessage({name: 'delete', url: url});
+    this.removeItem(url);
   }
 
   handleURLFieldChange(e) {
@@ -130,38 +192,23 @@ class CountDownApp extends React.Component {
     e.preventDefault();
     var seconds = this.state.sec;
     var url = e.target.url.value;
+
+    // Send message to background.js about new item.
+    this.port.postMessage({name: 'add', url: url, sec: seconds});
+
     this.setState((prevState) => {
-      // Decrement attribute sec every second.
-      var interval = setInterval(() => this.decrementSec(url), 1000);
       // Make a deep copy for Immutability and add one new item.
       var newItems = Object.assign({}, prevState.items);
-      newItems[url] = {sec: seconds, interval: interval};
-
-      return {items: newItems};
-    });
-  }
-
-  decrementSec(url) {
-    this.setState((prevState) => {
-      // Make a deep copy for Immutability and remove one item.
-      var newItems = Object.assign({}, prevState.items);
-      if(newItems[url].sec !== 0) {
-        newItems[url].sec = newItems[url].sec - 1;
-      }
-      else {
-        // Clear interval and delete item from dict.
-        clearInterval(newItems[url].interval);
-        delete newItems[url];
-      }
+      newItems[url] = {sec: seconds};
       return {items: newItems};
     });
   }
 
   removeItem(url) {
     this.setState((prevState) => {
-      // Make a deep copy for Immutability and remove one item.
+      // Must make a deep copy for Immutability, otherwise the Object
+      // reference is unchanged.
       var newItems = Object.assign({}, prevState.items);
-      clearInterval(newItems[url].interval);
       delete newItems[url];
       return {items: newItems};
     });
@@ -170,4 +217,4 @@ class CountDownApp extends React.Component {
 
 
 var mountNode = document.getElementById("root");
-ReactDOM.render(<CountDownApp />, mountNode);
+ReactDOM.render(<CountDownApp port={port} />, mountNode);
