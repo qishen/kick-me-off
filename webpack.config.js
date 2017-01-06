@@ -1,12 +1,13 @@
 var webpack = require('webpack');
 var path = require('path');
+var ExtractTextPlugin = require('extract-text-webpack-plugin');
 
 var BUILD_DIR = path.resolve(__dirname, 'dist');
 var APP_DIR = path.resolve(__dirname, '.');
 
 var config = {
   entry: {
-    main: [APP_DIR + '/popup.jsx'],
+    main: [APP_DIR + '/src/public/js/popup.jsx'],
     vendor: ['react', 'react-dom']
   },
   output: {
@@ -17,25 +18,29 @@ var config = {
     //library: '[name]_lib'
   },
   plugins: [
-    new webpack.optimize.CommonsChunkPlugin('vendor', 'vendor.bundle.js', Infinity)
-    /*new webpack.DllPlugin({
-      // The path to the manifest file which maps between
-      // modules included in a bundle and the internal IDs
-      // within that bundle
-      path: 'dist/[name]-manifest.json',
-      // The name of the global variable which the library's
-      // require function has been assigned to. This must match the
-      // output.library option above
-      name: '[name]_lib'
-    }),*/
+    new webpack.optimize.CommonsChunkPlugin('vendor', 'vendor.bundle.js', Infinity),
+    new ExtractTextPlugin('styles.css')
   ],
+  //devtool: 'source-map',
   module: {
     loaders : [
       {
         test : /\.jsx?/,
         include : APP_DIR,
         loader : 'babel'
-      }
+      },
+      {
+        test: /\.css$/,
+        include: /src/,
+        loader: "style-loader!css-loader" //["style-loader", "css-loader"]
+      },
+      {
+        test: /\.scss$/,
+        include : /src/,
+        loaders: ["style-loader", "css-loader", "sass-loader"]
+      },
+      { test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/, loader: "url-loader?limit=10000&mimetype=application/font-woff" },
+      { test: /\.(ttf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/, loader: "file-loader" }
     ]
   }
 };

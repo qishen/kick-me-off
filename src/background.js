@@ -1,5 +1,5 @@
 // Setup popup page in browserAction.
-chrome.browserAction.setPopup({popup: "popup.html"});
+chrome.browserAction.setPopup({popup: "../popup.html"});
 
 function closeTabs(url) {
   var patterns = "*://*." + url + "/*";

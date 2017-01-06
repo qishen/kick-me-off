@@ -1,0 +1,37 @@
+body {
+  font-family: 'Avenir', sans-serif;
+  font-size: 100%;
+  font-size: 10px;
+  min-height: 160px;
+  min-width: 250px;
+}
+
+span .madewithlove {
+  color: #666;
+  display: block;
+  bottom: 10px;
+  transform: translateX(-50%) translateY(-50%);
+  text-align: center;
+}
+
+span a {
+  color: #000000;
+  text-decoration: none;
+}
+span .fa {
+  color: #E90606;
+  margin: 0 3px;
+  animation: pound 0.35s infinite alternate;
+  -webkit-animation: pound 0.35s infinite alternate;
+}
+
+@-webkit-keyframes pound {
+  to {
+    transform: scale(1.1);
+  }
+}
+@keyframes pound {
+  to {
+    transform: scale(1.1);
+  }
+}

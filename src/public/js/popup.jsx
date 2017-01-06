@@ -1,3 +1,7 @@
+// Import CSS as components
+// import 'font-awesome-webpack';
+import '../css/style.css';
+
 import Utils from './utils';
 import React from 'react';
 import ReactDOM from 'react-dom';
@@ -98,7 +102,6 @@ class CountDownApp extends React.Component {
     return (
       <MuiThemeProvider>
         <div>
-          <h1>Kick Me Off!</h1>
           <form onSubmit={this.handleSubmit}>
 
             <MuiSelectField name='sec' floatingLabelText="Timer" value={this.state.sec}
