@@ -1,6 +1,7 @@
 var webpack = require('webpack');
 var path = require('path');
 var ExtractTextPlugin = require('extract-text-webpack-plugin');
+var CopyWebpackPlugin = require('copy-webpack-plugin');
 
 var BUILD_DIR = path.resolve(__dirname, 'dist');
 var APP_DIR = path.resolve(__dirname, '.');
@@ -8,6 +9,7 @@ var APP_DIR = path.resolve(__dirname, '.');
 var config = {
   entry: {
     main: [APP_DIR + '/src/public/js/popup.jsx'],
+    content: [APP_DIR + '/src/content.jsx'],
     vendor: ['react', 'react-dom']
   },
   output: {
@@ -19,20 +21,23 @@ var config = {
   },
   plugins: [
     new webpack.optimize.CommonsChunkPlugin('vendor', 'vendor.bundle.js', Infinity),
-    new ExtractTextPlugin('styles.css')
+    new ExtractTextPlugin('styles.css'),
+    // Copy background.js to build folder because chrome.tabs.executeScript only
+    // accept file name but not relative path of file.
+    // new CopyWebpackPlugin([{ from: APP_DIR + '/src/background.js' },])
   ],
   //devtool: 'source-map',
   module: {
     loaders : [
       {
         test : /\.jsx?/,
-        include : APP_DIR,
+        include : /src/,
         loader : 'babel'
       },
       {
         test: /\.css$/,
         include: /src/,
-        loader: "style-loader!css-loader" //["style-loader", "css-loader"]
+        loader: "style-loader!css-loader"
       },
       {
         test: /\.scss$/,

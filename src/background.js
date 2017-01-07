@@ -1,17 +1,6 @@
 // Setup popup page in browserAction.
 chrome.browserAction.setPopup({popup: "../popup.html"});
 
-function closeTabs(url) {
-  var patterns = "*://*." + url + "/*";
-  chrome.tabs.query({url: patterns}, function(tabs) {
-    tabs.map(function(tab) {
-      chrome.tabs.remove(tab.id);
-    });
-  });
-}
-
-function showAlertOnPage() {}
-
 var items = {};
 
 // Event listener for messages from popup page
@@ -32,7 +21,6 @@ chrome.runtime.onConnect.addListener(function(port) {
       else {
         items[msg.url].sec = 0;
         closeTabs(msg.url);
-        showAlertOnPage();
       }
       port.postMessage({items: items});
     }
@@ -57,8 +45,60 @@ chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
 // Alarm listener on event when timer is up.
 chrome.alarms.onAlarm.addListener(function(alarm) {
   closeTabs(alarm.name);
-  showAlertOnPage();
   if(items[alarm.name]){
     items[alarm.name].sec = 0; // Reset to 0 and block this url.
   }
 });
+
+
+/**
+ * Close all tabs whose urls match the pattern and show alert page
+ * on current active tab. Use delay to ensure close tabs are not
+ * considerred as active tab.
+ * @param  {String} url
+ */
+function closeTabs(url) {
+  var patterns = "*://*." + url + "/*";
+  chrome.tabs.query({url: patterns}, function(tabs) {
+    tabs.map(function(tab) {
+      chrome.tabs.remove(tab.id);
+    });
+    setTimeout(showAlertOnPage, 1000);
+  });
+}
+
+/**
+ * Show alert on current active tab in the window to Notify
+ * user that banned sites are closed.
+ */
+function showAlertOnPage() {
+  chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+    var tabId = tabs[0].id;
+    executeScript(tabId, [
+      {file: "dist/vendor.bundle.js"},
+      {file: "dist/content.bundle.js"}]
+    );
+  });
+}
+
+/**
+ * Execute JavaScript files consequently in chrome.tabs.executeScript().
+ * It is implemented in nested callback functions.
+ * @param  {Integer} tabId
+ * @param  {Array} injectDetailsArray  array of injectDetails object.
+ */
+function executeScript(tabId, injectDetailsArray) {
+  // create callback function that execute another function.
+  function createCallback(tabId, injectDetails, innerCallback) {
+    return function() {
+      chrome.tabs.executeScript(tabId, injectDetails, innerCallback);
+    };
+  }
+
+  var callback = null;
+  for(var i=injectDetailsArray.length-1; i>=0; i--) {
+    callback = createCallback(tabId, injectDetailsArray[i], callback);
+  }
+
+  if(callback !== null) callback();
+}
