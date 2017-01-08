@@ -3,12 +3,19 @@ chrome.browserAction.setPopup({popup: "../popup.html"});
 
 var items = {};
 
+// Reload data from local storage on first run.
+chrome.storage.sync.get('appItems', function(appItems) {
+  if(appItems['appItems']) items = appItems['appItems'];
+  else chrome.storage.sync.set({appItems: items});
+});
+
 // Event listener for messages from popup page
 chrome.runtime.onConnect.addListener(function(port) {
   port.onMessage.addListener(function(msg) {
     console.log(msg);
     if(msg.name == 'delete') {
       delete items[msg.url];
+      chrome.storage.sync.set({appItems: items}); // Sync local storage.
       chrome.alarms.clear(msg.url);
       port.postMessage({items: items});
     }
@@ -23,6 +30,7 @@ chrome.runtime.onConnect.addListener(function(port) {
         items[msg.url].sec = 0;
         closeTabs(msg.url);
       }
+      chrome.storage.sync.set({appItems: items});
       port.postMessage({items: items});
     }
     else if(msg.name == 'query') {
