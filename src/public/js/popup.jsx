@@ -34,18 +34,17 @@ const durationItems = [
   <MuiMenuItem key={43200} value={43200} primaryText="12 hours" />,
 ];
 
-// Example component
-class HelloMessage extends React.Component {
-  render() {
-    return <div>Hello {this.props.name}</div>;
-  }
-}
 
 class CountDownApp extends React.Component {
 
   constructor(props) {
     super(props);
-    this.state = {items: {}, text: 'youtube.com', sec: 0};
+    this.state = {
+      items: {},
+      text: 'youtube.com',
+      sec: 0,
+      errorText: ""
+    };
     this.intervals = [];
 
     // Bind functions to be used in callback.
@@ -111,6 +110,7 @@ class CountDownApp extends React.Component {
 
             <MuiTextField onChange={this.handleURLFieldChange} name='url'
               floatingLabelText="Enter url e.g. youtube.com"
+              errorText={this.state.errorText}
               value={this.state.text}
             />
 
@@ -156,6 +156,10 @@ class CountDownApp extends React.Component {
     });
   }
 
+  /**
+   * Decrement time on the timer bar and reset items in state.
+   * @param  {String} url
+   */
   decrementSec(url) {
     this.setState((prevState) => {
       // Make a deep copy for Immutability and remove one item.
@@ -178,29 +182,39 @@ class CountDownApp extends React.Component {
     this.removeItem(url);
   }
 
+  /**
+   * Handle URL field change on input, set it to either empty string
+   * or error text.
+   * @param  {Event} e
+   */
   handleURLFieldChange(e) {
     // Save the input text to state variable and do validation.
     this.setState({text: e.target.value});
-    if(Utils.isValidURL(e.target.value)){
-
-    }
-    else {
-      this.setState((prevState) => ({
-        text: prevState.text
-      }));
-    }
+    if(Utils.isValidURL(e.target.value))
+      this.setState({errorText: ""});
+    else
+      this.setState({errorText: "Your input is not a valid URL."});
   }
 
-  // TODO: Prevent enter same url if one already exists.
+  /**
+   * Get URL and seconds from submit form and send a message to
+   * background script to notify a new item is added.
+   * @param  {Event} e
+   */
   handleSubmit(e) {
     e.preventDefault();
-    var seconds = this.state.sec;
     var url = e.target.url.value;
-
-    // Send message to background.js about new item.
-    this.port.postMessage({name: 'add', url: url, sec: seconds});
+    if(Utils.isValidURL(url)) {
+      var seconds = this.state.sec;
+      // Send message to background.js about new item.
+      this.port.postMessage({name: 'add', url: url, sec: seconds});
+    }
   }
 
+  /**
+   * Graphically remove selected item from popup page.
+   * @param  {String} url
+   */
   removeItem(url) {
     this.setState((prevState) => {
       // Must make a deep copy for Immutability, otherwise the Object

@@ -1,5 +1,6 @@
+
 function isValidURL(url){
-  var regexp = /(ftp|http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?/
+  var regexp = /^([-A-Za-z0-9_]+\.)+([A-Za-z]+)$/;
   return regexp.test(url);
 }
 

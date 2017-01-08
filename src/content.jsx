@@ -35,7 +35,7 @@ class DialogExampleSimple extends React.Component {
             open={this.state.open}
             onRequestClose={this.handleClose}
           >
-            You're detected of wasting your time in these stupid sites, so I have to kick your ass!
+            You're detected of wasting your time on these stupid sites, so I have to kick your ass!
           </Dialog>
         </div>
       </MuiThemeProvider>

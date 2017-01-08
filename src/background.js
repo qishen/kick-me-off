@@ -19,6 +19,7 @@ chrome.runtime.onConnect.addListener(function(port) {
         chrome.alarms.create(msg.url, {delayInMinutes: Math.floor(msg.sec / 60)});
       }
       else {
+        // Do not show page alert here.
         items[msg.url].sec = 0;
         closeTabs(msg.url);
       }
@@ -38,6 +39,7 @@ chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
     if(changeInfo.url && changeInfo.url.indexOf(itemKey)  > -1 &&
        items[itemKey].sec === 0) {
       closeTabs(itemKey);
+      setTimeout(showAlertOnPage, 1000);
     }
   });
 });
@@ -45,6 +47,7 @@ chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
 // Alarm listener on event when timer is up.
 chrome.alarms.onAlarm.addListener(function(alarm) {
   closeTabs(alarm.name);
+  setTimeout(showAlertOnPage, 1000);
   if(items[alarm.name]){
     items[alarm.name].sec = 0; // Reset to 0 and block this url.
   }
@@ -53,8 +56,7 @@ chrome.alarms.onAlarm.addListener(function(alarm) {
 
 /**
  * Close all tabs whose urls match the pattern and show alert page
- * on current active tab. Use delay to ensure close tabs are not
- * considerred as active tab.
+ * on current active tab.
  * @param  {String} url
  */
 function closeTabs(url) {
@@ -63,13 +65,13 @@ function closeTabs(url) {
     tabs.map(function(tab) {
       chrome.tabs.remove(tab.id);
     });
-    setTimeout(showAlertOnPage, 1000);
   });
 }
 
 /**
  * Show alert on current active tab in the window to Notify
- * user that banned sites are closed.
+ * user that banned sites are closed. Use delay to ensure close
+ * tabs are not considerred as active tab.
  */
 function showAlertOnPage() {
   chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
